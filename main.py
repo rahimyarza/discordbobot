@@ -3,6 +3,7 @@ import requests
 import os
 import json
 from datetime import datetime, timezone, timedelta
+from keep_alive import keep_alive
 
 client = discord.Client()
 bot_secret = os.environ['TOKEN']
@@ -25,7 +26,7 @@ def convertToItem(item):
     if item[0] == items[0]:
       itemName = items[1]
       break
-  itemStr = f"{enhanceDict[item[1]]}:{itemName} (Price: {item[2]}) will be registered at {datetime.utcfromtimestamp(int(item[3]), tz).strftime('%H:%M:%S')}"
+  itemStr = f"{enhanceDict[item[1]]}:{itemName} (Price: {item[2]}) will be registered at {datetime.fromtimestamp(int(item[3]), tz).strftime('%H:%M:%S')}"
   return itemStr  
 
 @client.event
@@ -54,6 +55,7 @@ async def on_message(message):
     response = f'**Total Without Tax** = {totalWoTax} \n**Total Without VP** = {totalWoVP} \n**Total With VP** = {totalVP}'
     await message.channel.send(response)
 
+  # track market listing
   if msg.startswith('$trackMP'):
     resp = requests.post("https://trade.sea.playblackdesert.com/Trademarket/GetWorldMarketWaitList")
     res = json.loads(resp.text)
@@ -68,4 +70,5 @@ async def on_message(message):
     else:
       await message.channel.send("No item(s) on queue")
 
+keep_alive()
 client.run(bot_secret)
