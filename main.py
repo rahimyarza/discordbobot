@@ -17,16 +17,17 @@ enhanceDict = {
   "5": "PEN",
   "20": "PEN",
 }
+tz = timezone(+timedelta(hours=7))
 
 
 def convertToItem(item):
   itemName = ""
-  tz = timezone(+timedelta(hours=7))
   for items in data:
     if item[0] == items[0]:
       itemName = items[1]
       break
-  itemStr = f"{enhanceDict[item[1]]}:{itemName} (Price: {item[2]}) will be registered at {datetime.fromtimestamp(int(item[3]), tz).strftime('%H:%M:%S')}"
+  price = '{:,d}'.format(int(item[2]))
+  itemStr = f"{enhanceDict[item[1]]}:{itemName} (Price: {price}) will be registered at {datetime.fromtimestamp(int(item[3]), tz).strftime('%H:%M:%S')}"
   return itemStr  
 
 @client.event
@@ -69,6 +70,37 @@ async def on_message(message):
         await message.channel.send(convertToItem(item))
     else:
       await message.channel.send("No item(s) on queue")
+  
+  content = message.content.lower()
+  words = content.split()
+  if 'crot' in words:
+    imgUrl = "https://images-ext-1.discordapp.net/external/XOEBSA2JdVvXiiwOzzVK5SyRBc3FKIZInhOaynfARkg/%3Fsize%3D96/https/cdn.discordapp.com/emojis/887198281594179594.png"
+    for word in words:
+      if 'crot' in word:
+        await message.channel.send(imgUrl)
+
+  #show member profile on specific guild
+  if msg.startswith('$profile'):
+    resp = msg.split()
+    memberObj = object()
+    if len(resp) > 1:
+      id = resp[1]
+      disallowed_characters = "<@!>"
+      for char in disallowed_characters:
+        id = id.replace(char,"")
+      memberObj = await message.guild.fetch_member(int(id))
+    else:
+      memberObj = message.author  
+    now = datetime.now(tz)
+    embed = discord.Embed(
+      title=memberObj.name,
+      timestamp=now,
+      color=memberObj.color
+    )
+    embed.set_image(url=memberObj.avatar_url)
+    embed.add_field(name="Created at", value=memberObj.created_at.strftime('%d-%b-%Y (%H:%M:%S)'))
+    embed.add_field(name=f"Joined {message.guild.name} at", value=memberObj.joined_at.strftime('%d-%b-%Y (%H:%M:%S)'))
+    await message.channel.send(embed=embed)
 
 keep_alive()
 client.run(bot_secret)
